@@ -1,2 +1,4 @@
 Django==3.2
 django-bootstrap4==3.0.0
+requests==2.25.1
+python-binance==1.0.11
