@@ -1,3 +1,5 @@
+import threading
+
 from django.contrib import admin
 
 
@@ -11,12 +13,18 @@ class BaseModelAdmin(admin.ModelAdmin):
     readonly_fields = ['id']
 
 
-class SymbolModelAdmin(BaseModelAdmin):
-    # form = SymbolModelAdminForm
+@admin.action(description='Update prices')
+def update_symbol_prices(modeladmin, request, queryset):
+    def _update_symbol_prices():
+        models.Symbol.update_prices_from_binance(queryset)
+    threading.Thread(target=_update_symbol_prices())
 
+
+class SymbolModelAdmin(BaseModelAdmin):
     fields = ['id', 'symbol', 'price', 'updated_datetime']
     list_display = ['symbol', 'price', 'updated_datetime']
     readonly_fields = ['id', 'price', 'updated_datetime']
+    actions = [update_symbol_prices]
 
 
 class SpotOrderModelAdmin(BaseModelAdmin):

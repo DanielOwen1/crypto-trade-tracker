@@ -1,4 +1,5 @@
 from binance import Client
+from django.contrib import admin
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
@@ -38,9 +39,10 @@ class Symbol(models.Model):
         )
 
     @staticmethod
-    def update_prices_from_binance():
+    def update_prices_from_binance(queryset=None):
+        queryset = queryset or Symbol.relevant.all()
         symbols = []
-        for symbol in Symbol.relevant.all():
+        for symbol in queryset:
             symbol.price = binance_client.client().get_avg_price(symbol=symbol.symbol)['price']
             symbols.append(symbol)
         Symbol.objects.bulk_update(symbols, ['price'])
@@ -87,7 +89,8 @@ class SpotOrder(models.Model):
         return prof * self.executed_quantity
 
     @staticmethod
-    def import_from_binance():
+    @admin.action(description='Import/Update')
+    def import_update_from_binance():
         symbols = Symbol.relevant.all()
         for symbol in symbols:
             orders = binance_client.get_all_orders(symbol=symbol.symbol)
@@ -106,7 +109,6 @@ class SpotOrder(models.Model):
                             'side': order['side']
                         }
                     )
-                    print(a, created)
 
     class Meta:
         ordering = ['symbol']
